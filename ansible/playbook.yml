@@ -1,1 +1,51 @@
+-   name: Configuration for Armitage teamserver
+    connection: ssh
+    hosts: all
+    vars:
+        github_username: <USER> 
+    tasks:
 
+        -   name: install kali key
+            apt_key:
+                url: https://archive.kali.org/archive-key.asc
+                state: present
+            become: yes
+            become_method: sudo
+
+        -   name: add kali repository
+            apt_repository:
+                repo: deb http://http.kali.org/kali kali-rolling main non-free contrib
+                state: present
+            become: yes
+            become_method: sudo
+        
+        -   name: install packages
+            package:
+                name:
+                    - iptables
+                    - fail2ban
+                    - metasploit-framework
+                    - armitage
+                    - screen
+                state: present
+                update_cache: yes
+            become: yes
+            become_method: sudo
+
+        -   name: update SSH keys
+            authorized_key:
+                user: "{{ ansible_user_id }}"
+                state: present
+                key: https://github.com/{{ github_username}}.keys
+
+        -   name: Initialize msfdb
+            command: msfdb init
+            become: yes
+            become_method: sudo
+
+        -   name: Start armitage team server
+            command: screen -d -m ./teamserver {{ ansible_host }} {{ team_password }}
+            args:
+                chdir: /usr/share/armitage
+            become: yes
+            become_method: sudo
